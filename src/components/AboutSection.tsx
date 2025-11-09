@@ -1,145 +1,217 @@
-// src/components/AboutSection.tsx
+import { useRef, useEffect } from "react";
+import { Box, Typography, Container, Grid } from "@mui/material";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import SplitType from "split-type";
 
-import { useRef } from 'react';
-import { Box, Typography, Container, Grid, Divider } from '@mui/material';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
+gsap.registerPlugin(ScrollTrigger);
 
 const AboutSection = () => {
-    // Ref for the entire section (the trigger)
     const sectionRef = useRef<HTMLDivElement>(null);
-    // Ref for the image/headshot (for subtle Parallax)
     const imageRef = useRef<HTMLDivElement>(null);
-    // Ref for the content/text (for sequenced reveal)
     const contentRef = useRef<HTMLDivElement>(null);
+    const overlayRef = useRef<HTMLDivElement>(null);
 
     useGSAP(() => {
-        // ----------------------------------------------------
-        // 1. SCROLL-TRIGGERED ANIMATION: Image/Headshot Parallax
-        // ----------------------------------------------------
-        // We want the image to move slightly as the user scrolls through the section.
+        // -----------------------------
+        // 🌈 Floating Gradient Overlay Motion
+        // -----------------------------
+        gsap.to(overlayRef.current, {
+            backgroundPosition: "200% center",
+            duration: 10,
+            repeat: -1,
+            ease: "linear",
+        });
+
+        // -----------------------------
+        // 🎥 Headshot 3D Parallax
+        // -----------------------------
         gsap.to(imageRef.current, {
-            y: 50, // Moves the image 50 pixels down over the scroll duration
-            ease: 'none',
+            y: 100,
+            rotateY: 10,
+            scale: 1.05,
+            ease: "none",
             scrollTrigger: {
                 trigger: sectionRef.current,
-                start: 'top bottom', // Start when the top of the section enters the viewport
-                end: 'bottom top',   // End when the bottom of the section leaves the viewport
-                scrub: 1, // Smoothly link animation to scroll
+                start: "top bottom",
+                end: "bottom top",
+                scrub: 1.5,
             },
         });
 
-        // ----------------------------------------------------
-        // 2. SCROLL-TRIGGERED REVEAL: Staggered Content Entrance
-        // ----------------------------------------------------
-        // Use optional chaining and ensure the ref exists before using it
-        const contentElement = contentRef.current;
-        if (!contentElement) return; // Add an early return if the ref is null
+        // -----------------------------
+        // ✨ Text Split & Stagger Animation
+        // -----------------------------
+        if (contentRef.current) {
+            const split = new SplitType(contentRef.current.querySelector(".about-title") as HTMLElement, {
+                types: "chars",
+            });
 
-        // Cast contentElement to HTMLElement if TypeScript complains about the second argument
-        const contentItems = gsap.utils.toArray('.about-item', contentElement as HTMLElement);
-
-        // Create a Timeline for precise sequencing
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: contentElement, // Use the checked element as the trigger
-                start: 'top 80%',
-                toggleActions: 'play none none none',
-            }
-        });
-
-        // Sequence 1: Main Title Slides In
-        tl.from(contentItems[0] as HTMLElement, { // ⭐️ Cast the single element
-            y: 30, opacity: 0, duration: 0.8, ease: 'power3.out'
-        })
-            // Sequence 2: Sub-content items stagger in
-            .from(contentItems.slice(1) as HTMLElement[], { // ⭐️ Cast the slice (array)
-                y: 20,
+            gsap.from(split.chars, {
+                yPercent: 120,
                 opacity: 0,
-                duration: 0.6,
-                ease: 'power2.out',
-                stagger: 0.15,
-            }, '<0.2');
+                rotateX: -90,
+                stagger: 0.03,
+                duration: 1.2,
+                ease: "back.out(1.7)",
+                scrollTrigger: {
+                    trigger: sectionRef.current,
+                    start: "top 75%",
+                },
+            });
+        }
 
+        // -----------------------------
+        // 🪄 Content Fade-up Cascade
+        // -----------------------------
+        gsap.from(".about-item", {
+            y: 30,
+            opacity: 0,
+            stagger: 0.2,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+                trigger: contentRef.current,
+                start: "top 85%",
+            },
+        });
     }, { scope: sectionRef });
 
     return (
         <Box
             ref={sectionRef}
-            id='about'
+            id="about"
             sx={{
-                minHeight: '100vh',
-                display: 'flex',
-                alignItems: 'center',
-                py: 10,
-                backgroundColor: 'background.paper', // Slightly lighter background for contrast
+                minHeight: "100vh",
+                display: "flex",
+                alignItems: "center",
+                position: "relative",
+                overflow: "hidden",
+                background: "radial-gradient(circle at top left, #0f2027, #203a43, #2c5364)",
             }}
         >
-            <Container maxWidth="lg">
-                <Grid container spacing={8} alignItems="center">
+            {/* 🌈 Floating Gradient Overlay */}
+            <Box
+                ref={overlayRef}
+                sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                    background: "linear-gradient(120deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 100%)",
+                    backgroundSize: "200% 200%",
+                    mixBlendMode: "overlay",
+                    zIndex: 0,
+                }}
+            />
 
-                    {/* LEFT COLUMN: Headshot / Image (Animated) */}
-                    <Grid size={{ xs: 12, md: 5 }} >
-                        <Box ref={imageRef} sx={{ position: 'relative', textAlign: { xs: 'center', md: 'left' } }}>
+            <Container maxWidth="lg" sx={{ position: "relative", zIndex: 2 }}>
+                <Grid container spacing={8} alignItems="center">
+                    {/* 🧠 LEFT: Headshot */}
+                    <Grid size={{xs:12,md:5}} >
+                        <Box
+                            ref={imageRef}
+                            sx={{
+                                position: "relative",
+                                mx: { xs: "auto", md: 0 },
+                                width: "90%",
+                                maxWidth: 420,
+                                height: { xs: 320, md: 520 },
+                                borderRadius: "30px",
+                                overflow: "hidden",
+                                boxShadow: "0 25px 50px rgba(0,0,0,0.5)",
+                                transformStyle: "preserve-3d",
+                            }}
+                        >
+                            {/* 🔮 Glowing Border */}
                             <Box
                                 sx={{
-                                    width: '100%',
-                                    height: { xs: 300, md: 500 },
-                                    maxWidth: 400,
-                                    margin: { xs: '0 auto', md: 0 },
-                                    borderRadius: 4,
-                                    // Placeholder for your actual image
-                                    backgroundColor: 'secondary.main',
-                                    backgroundImage: 'url(/assets/your-headshot.jpg)',
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    boxShadow: 8,
+                                    position: "absolute",
+                                    inset: 0,
+                                    borderRadius: "inherit",
+                                    boxShadow: "0 0 40px 5px rgba(0,255,255,0.2)",
+                                }}
+                            />
+                            {/* 📸 Headshot Image */}
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    backgroundImage: "url(/assets/your-headshot.jpg)",
+                                    backgroundSize: "cover",
+                                    backgroundPosition: "center",
+                                    transform: "translateZ(30px)",
                                 }}
                             />
                         </Box>
                     </Grid>
 
-                    {/* RIGHT COLUMN: Bio / Content (Staggered Reveal) */}
-                    <Grid size={{ xs: 12, md: 7 }} >
-                        <Box ref={contentRef}>
+                    {/* 🧩 RIGHT: Bio Content */}
 
-                            {/* Main Title (about-item 0) */}
+                    <Grid size={{ xs: 12, md: 7 }}>
+                        <Box ref={contentRef}>
                             <Typography
                                 variant="h2"
                                 component="h2"
-                                className="about-item"
-                                sx={{ mb: 4, color: 'primary.main' }}
+                                className="about-title"
+                                sx={{
+                                    mb: 4,
+                                    fontWeight: 700,
+                                    color: "#00e5ff",
+                                    textShadow: "0 0 20px rgba(0,229,255,0.3)",
+                                }}
                             >
                                 The Architect Behind the Pixels
                             </Typography>
 
-                            {/* Bio Paragraphs (about-item 1 & 2) */}
-                            <Typography variant="body1" className="about-item" sx={{ mb: 3 }}>
-                                {/* Replace with your actual bio */}
-                                I'm a seasoned UI/UX and Front-End specialist dedicated to building performance-optimized, attractive, and accessible web experiences. My process combines strategic product thinking with pixel-perfect execution, ensuring every micro-interaction serves a purpose.
+                            <Typography
+                                variant="body1"
+                                className="about-item"
+                                sx={{
+                                    mb: 3,
+                                    color: "rgba(255,255,255,0.85)",
+                                    fontSize: "1.1rem",
+                                    lineHeight: 1.7,
+                                }}
+                            >
+                                I’m a creative technologist and front-end specialist passionate about
+                                crafting immersive, performance-optimized, and intuitive digital experiences.
+                                Each interface I design tells a story — blending logic, aesthetics, and emotion
+                                to create something truly memorable.
                             </Typography>
 
-                            <Divider className="about-item" sx={{ my: 4 }} />
+                            <Typography
+                                variant="body1"
+                                className="about-item"
+                                sx={{
+                                    mb: 5,
+                                    color: "rgba(255,255,255,0.75)",
+                                    fontSize: "1rem",
+                                }}
+                            >
+                                With expertise spanning React, GSAP, and UI design systems, I focus on building
+                                fluid, story-driven experiences that feel alive and human.
+                            </Typography>
 
-                            {/* Key Skills/Facts (about-item 3, 4, 5) */}
-                            <Grid container spacing={2}>
+                            <Grid container spacing={3} className="about-item">
                                 <Grid size={{ xs: 6 }}>
-                                    <Typography variant="h6" className="about-item">
-                                        **Specialty:** Animated UI / GSAP
+                                    <Typography sx={{ color: "#80deea", fontWeight: 600 }}>
+                                        ⚡ Specialty: Animated UI / GSAP
                                     </Typography>
                                 </Grid>
                                 <Grid size={{ xs: 6 }}>
-                                    <Typography variant="h6" className="about-item">
-                                        **Tools:** React, MUI, TypeScript
+                                    <Typography sx={{ color: "#80deea", fontWeight: 600 }}>
+                                        🧩 Tools: React, MUI, TypeScript
                                     </Typography>
                                 </Grid>
-                                <Grid size={{ xs: 12 }}>
-                                    <Typography variant="h6" className="about-item">
-                                        **Location:** Global (Remote)
+                                <Grid size={{ xs: 6 }}>
+                                    <Typography sx={{ color: "#80deea", fontWeight: 600 }}>
+                                        🌍 Location: Global (Remote)
                                     </Typography>
                                 </Grid>
                             </Grid>
-
                         </Box>
                     </Grid>
                 </Grid>
